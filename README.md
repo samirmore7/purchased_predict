@@ -1,1 +1,1 @@
-# puechased_predict
+https://puechased-predict-1.onrender.com/predict
