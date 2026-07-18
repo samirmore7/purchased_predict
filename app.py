@@ -5,17 +5,23 @@ import numpy as np
 
 app = Flask(__name__)
 
-# Load the model
+# ─── 1. LOAD MODEL (AND OPTIONAL SCALER) ───
 with open('naive_model.pkl', 'rb') as file:
     model = pickle.load(file)
 
-# ─── CATEGORICAL LABELS ───
-# Update these names to best fit your dataset's actual target outcomes
+# UNCOMMENT THE LINES BELOW IF YOU USED A STANDARD SCALER DURING TRAINING:
+# with open('scaler.pkl', 'rb') as scaler_file:
+#     scaler = pickle.load(scaler_file)
+
+
+# ─── 2. CATEGORICAL MAP LABELING ───
 PREDICTION_MAP = {
     0: "🔴 Unlikely to Convert (Low Propensity)",
     1: "🟢 Likely to Convert (High Propensity)"
 }
 
+
+# ─── 3. UI LAYOUT & STYLE DESIGN ───
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
@@ -195,20 +201,37 @@ HTML_TEMPLATE = """
 </html>
 """
 
+# ─── 4. ROUTES & BACKEND PREDICTION LOGIC ───
 @app.route('/')
 def home():
     return render_template_string(HTML_TEMPLATE)
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    # Capture interface values
     gender = int(request.form['gender'])
     age = int(request.form['age'])
     salary = int(request.form['salary'])
     
+    # Structure input data explicitly matching model order
     features = pd.DataFrame([[gender, age, salary]], columns=['Gender', 'Age', 'EstimatedSalary'])
     
+    # Terminal Debugging: Prints inputs to help you verify data structure locally
+    print("\n--- NEW PREDICTION ATTEMPT ---")
+    print("Raw Input DataFrame:\n", features)
+    
+    # APPLIES SCALER IF ENABLED:
+    # If using scaler, change 'features' inside model.predict() below to 'scaled_features'
+    # scaled_features = scaler.transform(features)
+    
+    # Run Inference
     prediction_idx = model.predict(features)[0]
-    prediction_label = PREDICTION_MAP.get(prediction_idx, "Unknown Class")
+    
+    print("Model Output Label Matrix ID:", prediction_idx)
+    print("------------------------------\n")
+    
+    # Map index to customized frontend layout string
+    prediction_label = PREDICTION_MAP.get(prediction_idx, "Unknown Class Cluster")
     
     return render_template_string(HTML_TEMPLATE, prediction=prediction_label)
 
